@@ -163,21 +163,21 @@ st.subheader("Results")
 st.markdown('<div class="z-card">', unsafe_allow_html=True)
 
 if mode == "Required Return to Coast":
-    st.write(f"Required Return to Coast: {{required_return*100:.2f}}% annualized")
-    st.write(f"Future Value at Expected Return: ${{fv_at_expected:,.0f}}")
-    st.write(f"Target at 65: ${{target_balance_at_65:,.0f}}")
+    st.write(f"Required Return to Coast: {required_return*100:.2f}% annualized")
+    st.write(f"Future Value at Expected Return: ${fv_at_expected:,.0f}")
+    st.write(f"Target at 65: ${target_balance_at_65:,.0f}")
 
 elif mode == "Ending Balance with Expected Return":
-    st.write(f"Ending Balance at Expected Return: ${{fv_at_expected:,.0f}}")
-    st.write(f"Target at 65: ${{target_balance_at_65:,.0f}}")
+    st.write(f"Ending Balance at Expected Return: ${fv_at_expected:,.0f}")
+    st.write(f"Target at 65: ${target_balance_at_65:,.0f}")
     if fv_gap <= 0:
         st.success("✅ On track or ahead.")
     else:
-        st.warning(f"Short by ${{fv_gap:,.0f}}")
+        st.warning(f"Short by ${fv_gap:,.0f}")
 
 elif mode == "Years Needed at Expected Return":
-    st.write(f"Years Needed: {{required_years:.1f}}")
-    st.write(f"Target at 65: ${{target_balance_at_65:,.0f}}")
+    st.write(f"Years Needed: {required_years:.1f}")
+    st.write(f"Target at 65: ${target_balance_at_65:,.0f}")
 
 st.markdown("</div>", unsafe_allow_html=True)
 
@@ -212,32 +212,32 @@ def build_pdf(path_to_chart: str):
     pdf.set_font("Arial", 'B', 16)
     pdf.cell(0, 10, "Coast FI Calculator – Zizzi Investments", ln=True)
     pdf.set_font("Arial", '', 12)
-    pdf.cell(0, 8, f"Mode: {{mode}}", ln=True)
-    pdf.cell(0, 8, f"Basis: {{'Nominal' if basis.startswith('Nominal') else 'Real'}}", ln=True)
+    pdf.cell(0, 8, f"Mode: {mode}", ln=True)
+    pdf.cell(0, 8, f"Basis: {'Nominal' if basis.startswith('Nominal') else 'Real'}", ln=True)
     pdf.ln(2)
     pdf.set_font("Arial", 'B', 12)
     pdf.cell(0, 8, "Inputs", ln=True)
     pdf.set_font("Arial", '', 12)
-    pdf.cell(0, 7, f"Current Spending: ${{current_spending:,.0f}}", ln=True)
-    pdf.cell(0, 7, f"Inflation Rate: {{inflation_rate*100:.2f}}%", ln=True)
-    pdf.cell(0, 7, f"Years Until 65: {{years_until_65}}", ln=True)
-    pdf.cell(0, 7, f"Current Portfolio: ${{current_portfolio:,.0f}}", ln=True)
-    pdf.cell(0, 7, f"Expected Return (nominal): {{expected_return_nominal*100:.2f}}%", ln=True)
-    pdf.cell(0, 7, f"Safe Withdrawal Rate: {{swr*100:.2f}}%", ln=True)
+    pdf.cell(0, 7, f"Current Spending: ${current_spending:,.0f}", ln=True)
+    pdf.cell(0, 7, f"Inflation Rate: {inflation_rate*100:.2f}%", ln=True)
+    pdf.cell(0, 7, f"Years Until 65: {years_until_65}", ln=True)
+    pdf.cell(0, 7, f"Current Portfolio: ${current_portfolio:,.0f}", ln=True)
+    pdf.cell(0, 7, f"Expected Return (nominal): {expected_return_nominal*100:.2f}%", ln=True)
+    pdf.cell(0, 7, f"Safe Withdrawal Rate: {swr*100:.2f}%", ln=True)
     if use_contrib and contrib_amount > 0:
-        pdf.cell(0, 7, f"Contributions: ${{contrib_amount:,.0f}} {{contrib_freq.lower()}} ({{contrib_timing.lower()}})", ln=True)
+        pdf.cell(0, 7, f"Contributions: ${contrib_amount:,.0f} {contrib_freq.lower()} ({contrib_timing.lower()})", ln=True)
 
     pdf.ln(2)
     pdf.set_font("Arial", 'B', 12)
     pdf.cell(0, 8, "Results", ln=True)
     pdf.set_font("Arial", '', 12)
     if mode == "Required Return to Coast":
-        pdf.cell(0, 7, f"Required Return to Coast: {{required_return*100:.2f}}%", ln=True)
+        pdf.cell(0, 7, f"Required Return to Coast: {required_return*100:.2f}%", ln=True)
     elif mode == "Ending Balance with Expected Return":
-        pdf.cell(0, 7, f"Ending Balance @ Expected Return: ${{fv_at_expected:,.0f}}", ln=True)
+        pdf.cell(0, 7, f"Ending Balance @ Expected Return: ${fv_at_expected:,.0f}", ln=True)
     else:
-        pdf.cell(0, 7, f"Years Needed @ Expected Return: {{required_years:.1f}}", ln=True)
-    pdf.cell(0, 7, f"Target at 65: ${{target_balance_at_65:,.0f}}", ln=True)
+        pdf.cell(0, 7, f"Years Needed @ Expected Return: {required_years:.1f}", ln=True)
+    pdf.cell(0, 7, f"Target at 65: ${target_balance_at_65:,.0f}", ln=True)
 
     if path_to_chart and os.path.exists(path_to_chart):
         pdf.ln(4)
