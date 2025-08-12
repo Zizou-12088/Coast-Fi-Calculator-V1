@@ -1,5 +1,4 @@
 
-
 import math
 import streamlit as st
 import matplotlib.pyplot as plt
@@ -7,7 +6,7 @@ from fpdf import FPDF
 import tempfile
 import os
 
-st.set_page_config(page_title="Coast FI Calculator — Zizzi Investments", page_icon="🏝", layout="centered")
+st.set_page_config(page_title="Coast FI Calculator — Zizzi Investments", page_icon=":desert_island:", layout="centered")
 
 # --- Branding ---
 BRAND_PRIMARY = "#2F2A26"
@@ -26,7 +25,7 @@ st.markdown(
 )
 
 st.title("Coast FI Calculator")
-st.caption("Plan your freedom date with Zizzi Investments — see if you can coast to 65 with or without small contributions.")
+st.caption("Plan your freedom date with Zizzi Investments - see if you can coast to 65 with or without small contributions.")
 
 with st.container():
     btn_cols = st.columns([3,1])
@@ -171,7 +170,7 @@ elif mode == "Ending Balance with Expected Return":
     st.write(f"Ending Balance at Expected Return: ${fv_at_expected:,.0f}")
     st.write(f"Target at 65: ${target_balance_at_65:,.0f}")
     if fv_gap <= 0:
-        st.success("✅ On track or ahead.")
+        st.success("On track or ahead.")
     else:
         st.warning(f"Short by ${fv_gap:,.0f}")
 
@@ -206,38 +205,46 @@ if years_until_65 > 0 and current_portfolio > 0:
 
 # -------- PDF Download (includes chart + disclaimer) --------
 st.subheader("Download Results")
+
+def _latin1(s: str) -> str:
+    try:
+        return s.encode("latin-1", "replace").decode("latin-1")
+    except Exception:
+        return s
+
 def build_pdf(path_to_chart: str):
     pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
     pdf.set_font("Arial", 'B', 16)
-    pdf.cell(0, 10, "Coast FI Calculator – Zizzi Investments", ln=True)
+    pdf.cell(0, 10, _latin1("Coast FI Calculator - Zizzi Investments"), ln=True)
     pdf.set_font("Arial", '', 12)
-    pdf.cell(0, 8, f"Mode: {mode}", ln=True)
-    pdf.cell(0, 8, f"Basis: {'Nominal' if basis.startswith('Nominal') else 'Real'}", ln=True)
+    pdf.cell(0, 8, _latin1(f"Mode: {mode}"), ln=True)
+    pdf.cell(0, 8, _latin1(f"Basis: {'Nominal' if basis.startswith('Nominal') else 'Real'}"), ln=True)
     pdf.ln(2)
     pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 8, "Inputs", ln=True)
+    pdf.cell(0, 8, _latin1("Inputs"), ln=True)
     pdf.set_font("Arial", '', 12)
-    pdf.cell(0, 7, f"Current Spending: ${current_spending:,.0f}", ln=True)
-    pdf.cell(0, 7, f"Inflation Rate: {inflation_rate*100:.2f}%", ln=True)
-    pdf.cell(0, 7, f"Years Until 65: {years_until_65}", ln=True)
-    pdf.cell(0, 7, f"Current Portfolio: ${current_portfolio:,.0f}", ln=True)
-    pdf.cell(0, 7, f"Expected Return (nominal): {expected_return_nominal*100:.2f}%", ln=True)
-    pdf.cell(0, 7, f"Safe Withdrawal Rate: {swr*100:.2f}%", ln=True)
+    pdf.cell(0, 7, _latin1(f"Current Spending: ${current_spending:,.0f}"), ln=True)
+    pdf.cell(0, 7, _latin1(f"Inflation Rate: {inflation_rate*100:.2f}%"), ln=True)
+    pdf.cell(0, 7, _latin1(f"Years Until 65: {years_until_65}"), ln=True)
+    pdf.cell(0, 7, _latin1(f"Current Portfolio: ${current_portfolio:,.0f}"), ln=True)
+    pdf.cell(0, 7, _latin1(f"Expected Return (nominal): {expected_return_nominal*100:.2f}%"), ln=True)
+    pdf.cell(0, 7, _latin1(f"Safe Withdrawal Rate: {swr*100:.2f}%"), ln=True)
     if use_contrib and contrib_amount > 0:
-        pdf.cell(0, 7, f"Contributions: ${contrib_amount:,.0f} {contrib_freq.lower()} ({contrib_timing.lower()})", ln=True)
+        pdf.cell(0, 7, _latin1(f"Contributions: ${contrib_amount:,.0f} {contrib_freq.lower()} ({contrib_timing.lower()})"), ln=True)
 
     pdf.ln(2)
     pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 8, "Results", ln=True)
+    pdf.cell(0, 8, _latin1("Results"), ln=True)
     pdf.set_font("Arial", '', 12)
     if mode == "Required Return to Coast":
-        pdf.cell(0, 7, f"Required Return to Coast: {required_return*100:.2f}%", ln=True)
+        pdf.cell(0, 7, _latin1(f"Required Return to Coast: {required_return*100:.2f}%"), ln=True)
     elif mode == "Ending Balance with Expected Return":
-        pdf.cell(0, 7, f"Ending Balance @ Expected Return: ${fv_at_expected:,.0f}", ln=True)
+        pdf.cell(0, 7, _latin1(f"Ending Balance @ Expected Return: ${fv_at_expected:,.0f}"), ln=True)
     else:
-        pdf.cell(0, 7, f"Years Needed @ Expected Return: {required_years:.1f}", ln=True)
-    pdf.cell(0, 7, f"Target at 65: ${target_balance_at_65:,.0f}", ln=True)
+        pdf.cell(0, 7, _latin1(f"Years Needed @ Expected Return: {required_years:.1f}"), ln=True)
+    pdf.cell(0, 7, _latin1(f"Target at 65: ${target_balance_at_65:,.0f}"), ln=True)
 
     if path_to_chart and os.path.exists(path_to_chart):
         pdf.ln(4)
@@ -245,7 +252,7 @@ def build_pdf(path_to_chart: str):
 
     pdf.ln(6)
     pdf.set_font("Arial", 'I', 10)
-    pdf.multi_cell(0, 6, "This calculator is provided for educational purposes only and should not be considered investment, legal, or tax advice. The calculations are based on user-provided assumptions, which may not reflect actual market conditions or your personal situation. Zizzi Investments, LLC makes no guarantee as to the accuracy or completeness of the results and assumes no liability for decisions made based on this information. Please consult a qualified professional before making financial decisions.")
+    pdf.multi_cell(0, 6, _latin1("This calculator is provided for educational purposes only and should not be considered investment, legal, or tax advice. The calculations are based on user-provided assumptions, which may not reflect actual market conditions or your personal situation. Zizzi Investments, LLC makes no guarantee as to the accuracy or completeness of the results and assumes no liability for decisions made based on this information. Please consult a qualified professional before making financial decisions."))
     return pdf
 
 if st.button("Download PDF Report"):
