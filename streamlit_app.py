@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from fpdf import FPDF
 import tempfile
 import os
+import numpy as np
 
 st.set_page_config(page_title="Coast FI Calculator — Zizzi Investments", page_icon=":desert_island:", layout="centered")
 
@@ -42,13 +43,16 @@ st.markdown(
         " border-radius: 1rem;"
         " border: 1px solid #eae6df;"
     " }"
+    ".mli-score { font-size: 1.1rem; font-weight: 600; }"
     "</style>"
     .replace("BRAND_BG", BRAND_BG)
     .replace("BRAND_CARD_BG", BRAND_CARD_BG),
     unsafe_allow_html=True
 )
 
+# =============================================================
 # Inputs
+# =============================================================
 st.subheader("Inputs")
 left, right = st.columns(2)
 with left:
@@ -79,7 +83,9 @@ if use_contrib:
     with c3:
         contrib_timing = st.selectbox("Timing", ["End of period", "Beginning of period"], index=0)
 
+# =============================================================
 # Helper functions
+# =============================================================
 def real_return(nominal, infl):
     return (1 + nominal) / (1 + infl) - 1
 
@@ -138,7 +144,9 @@ def solve_years_needed(target, pv, r_annual, use_contrib=False, pmt=0.0, freq="M
         else: hi = mid
     return (lo + hi) / 2
 
+# =============================================================
 # Target & return
+# =============================================================
 if basis.startswith("Nominal"):
     future_spending = current_spending * ((1 + inflation_rate) ** years_until_65)
     target_balance_at_65 = future_spending / swr if swr > 0 else float("nan")
@@ -154,7 +162,9 @@ fv_gap = target_balance_at_65 - fv_at_expected
 required_return = solve_required_return(target_balance_at_65, current_portfolio, years_until_65, use_contrib, contrib_amount, contrib_freq, contrib_timing)
 required_years = solve_years_needed(target_balance_at_65, current_portfolio, r_for_math, use_contrib, contrib_amount, contrib_freq, contrib_timing)
 
+# =============================================================
 # Solve mode
+# =============================================================
 st.subheader("Choose what to solve for")
 mode = st.radio("Solve for", ("Required Return to Coast", "Ending Balance with Expected Return", "Years Needed at Expected Return"))
 
@@ -180,7 +190,9 @@ elif mode == "Years Needed at Expected Return":
 
 st.markdown("</div>", unsafe_allow_html=True)
 
-# -------- Chart (prettier) --------
+# =============================================================
+# Projection Chart
+# =============================================================
 chart_path = None
 if years_until_65 > 0 and current_portfolio > 0:
     years = list(range(0, years_until_65 + 1))
@@ -198,12 +210,71 @@ if years_until_65 > 0 and current_portfolio > 0:
     fig.tight_layout()
     st.pyplot(fig)
 
-    # Save chart to a temporary PNG for PDF export
+    # Save chart image for PDF
     tmp_img = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
     fig.savefig(tmp_img.name, dpi=200)
     chart_path = tmp_img.name
 
-# -------- PDF Download (includes chart + disclaimer) --------
+# =============================================================
+# Margin Lifestyle Index (MLI) - Qualitative Sliders
+# =============================================================
+st.subheader("Margin Lifestyle Index (Qualitative)")
+st.caption("Rate how you currently feel in each area. Each slider is weighted 0–20; total score is out of 100.")
+
+mli_cols = st.columns(2)
+with mli_cols[0]:
+    mli_emotional = st.slider("Emotional / Spiritual", 0, 20, 10)
+    mli_relationships = st.slider("Strength of Relationships", 0, 20, 10)
+    mli_physical = st.slider("Physical Health / Fitness", 0, 20, 10)
+with mli_cols[1]:
+    mli_purpose = st.slider("Current Work / Purpose", 0, 20, 10)
+    mli_finances = st.slider("Overall Feeling about Finances", 0, 20, 10)
+
+mli_scores = {
+    "Emotional/Spiritual": mli_emotional,
+    "Relationships": mli_relationships,
+    "Physical": mli_physical,
+    "Work/Purpose": mli_purpose,
+    "Finances": mli_finances,
+}
+mli_total = sum(mli_scores.values())
+
+# Qualitative interpretation
+if mli_total < 40:
+    mli_label = "Needs Attention"
+elif mli_total < 70:
+    mli_label = "Developing"
+else:
+    mli_label = "Strong"
+
+st.markdown(f'<div class="z-card"><span class="mli-score">Your Margin Lifestyle Index: {mli_total} / 100 — {mli_label}</span></div>', unsafe_allow_html=True)
+
+# Radar chart for MLI
+mli_chart_path = None
+labels = list(mli_scores.keys())
+values = list(mli_scores.values())
+angles = np.linspace(0, 2*np.pi, len(labels), endpoint=False).tolist()
+values_cycle = values + values[:1]
+angles_cycle = angles + angles[:1]
+
+fig2 = plt.figure(figsize=(5, 5))
+ax2 = fig2.add_subplot(111, polar=True)
+ax2.plot(angles_cycle, values_cycle, linewidth=2)
+ax2.fill(angles_cycle, values_cycle, alpha=0.15)
+ax2.set_xticks(angles)
+ax2.set_xticklabels(labels)
+ax2.set_yticks([5,10,15,20])
+ax2.set_ylim(0,20)
+fig2.tight_layout()
+st.pyplot(fig2)
+
+tmp_img2 = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+fig2.savefig(tmp_img2.name, dpi=200)
+mli_chart_path = tmp_img2.name
+
+# =============================================================
+# PDF Download (includes both charts + disclaimer)
+# =============================================================
 st.subheader("Download Results")
 
 def _latin1(s: str) -> str:
@@ -212,7 +283,7 @@ def _latin1(s: str) -> str:
     except Exception:
         return s
 
-def build_pdf(path_to_chart: str):
+def build_pdf(path_to_chart: str, path_to_mli: str):
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
@@ -250,19 +321,35 @@ def build_pdf(path_to_chart: str):
         pdf.ln(4)
         pdf.image(path_to_chart, w=180)
 
+    # MLI section
+    pdf.ln(6)
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 8, _latin1("Margin Lifestyle Index"), ln=True)
+    pdf.set_font("Arial", '', 12)
+    for k, v in mli_scores.items():
+        pdf.cell(0, 7, _latin1(f"{k}: {v}/20"), ln=True)
+    pdf.cell(0, 7, _latin1(f"Total: {mli_total}/100 ({mli_label})"), ln=True)
+
+    if path_to_mli and os.path.exists(path_to_mli):
+        pdf.ln(4)
+        pdf.image(path_to_mli, w=150)
+
     pdf.ln(6)
     pdf.set_font("Arial", 'I', 10)
     pdf.multi_cell(0, 6, _latin1("This calculator is provided for educational purposes only and should not be considered investment, legal, or tax advice. The calculations are based on user-provided assumptions, which may not reflect actual market conditions or your personal situation. Zizzi Investments, LLC makes no guarantee as to the accuracy or completeness of the results and assumes no liability for decisions made based on this information. Please consult a qualified professional before making financial decisions."))
     return pdf
 
 if st.button("Download PDF Report"):
-    pdf = build_pdf(chart_path)
+    pdf = build_pdf(chart_path, mli_chart_path)
     tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
     pdf.output(tmp_file.name)
     with open(tmp_file.name, "rb") as f:
         st.download_button("Click to Download PDF", f, file_name="coast_fi_report.pdf")
+    # cleanup temp images
     if chart_path and os.path.exists(chart_path):
         os.unlink(chart_path)
+    if mli_chart_path and os.path.exists(mli_chart_path):
+        os.unlink(mli_chart_path)
 
 # Disclaimer
 st.markdown("---")
