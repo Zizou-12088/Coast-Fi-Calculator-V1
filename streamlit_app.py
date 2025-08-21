@@ -2,7 +2,7 @@
 import math
 import streamlit as st
 import matplotlib.pyplot as plt
-from fpdf import FPDF
+from fpdf import FPDF  # fpdf2
 import tempfile
 import os
 import numpy as np
@@ -17,11 +17,20 @@ BRAND_CARD_BG = "#F7F5F2"
 
 # ---- Header ----
 st.markdown(
-    '<div style="background:BRAND_PRIMARY;padding:16px;border-radius:12px;margin-bottom:16px;">'
-    '<img src="LOGO_URL" style="height:44px;" alt="Zizzi Investments logo">'
+    '<link href="https://fonts.googleapis.com/css2?family=Archivo+Expanded:wght@500;600&family=Source+Sans+3:wght@400;600&family=Source+Serif+4:wght@600&display=swap" rel="stylesheet">'
+    '<style>'
+    'h1, h2, h3 { font-family: "Source Serif 4", serif; font-weight: 600; }'
+    '.subhead, label, .stButton button, .stRadio, .stSelectbox, .stSlider, .stNumberInput { font-family: "Archivo Expanded", sans-serif; }'
+    'body, .stApp, .stMarkdown, .stCaption, .stText, .stDataFrame, .z-card { font-family: "Source Sans 3", sans-serif; }'
+    '</style>',
+    unsafe_allow_html=True
+)
+
+st.markdown(
+    '<div style="background:{BRAND_PRIMARY};padding:16px;border-radius:12px;margin-bottom:16px;">'
+    '<img src="https://zizzi-invest.com/wp-content/uploads/2022/08/Zizzi_Logo_RGB_Reverse-165x48.png" style="height:44px;" alt="Zizzi Investments logo">'
     '</div>'
-    .replace("BRAND_PRIMARY", BRAND_PRIMARY)
-    .replace("LOGO_URL", "https://zizzi-invest.com/wp-content/uploads/2022/08/Zizzi_Logo_RGB_Reverse-165x48.png"),
+    .replace("{BRAND_PRIMARY}", BRAND_PRIMARY),
     unsafe_allow_html=True
 )
 
@@ -36,17 +45,18 @@ with st.container():
 # Styles
 st.markdown(
     "<style>"
-    ".stApp { background-color: BRAND_BG; }"
+    ".stApp { background-color: {BRAND_BG}; }"
     ".z-card {"
-        " background: BRAND_CARD_BG;"
+        " background: {BRAND_CARD_BG};"
         " padding: 1.25rem;"
         " border-radius: 1rem;"
         " border: 1px solid #eae6df;"
     " }"
     ".mli-score { font-size: 1.1rem; font-weight: 600; }"
+    ".legend-badge { display:inline-block; padding:4px 8px; border-radius:8px; margin-right:6px; border:1px solid #ddd; }"
     "</style>"
-    .replace("BRAND_BG", BRAND_BG)
-    .replace("BRAND_CARD_BG", BRAND_CARD_BG),
+    .replace("{BRAND_BG}", BRAND_BG)
+    .replace("{BRAND_CARD_BG}", BRAND_CARD_BG),
     unsafe_allow_html=True
 )
 
@@ -219,16 +229,20 @@ if years_until_65 > 0 and current_portfolio > 0:
 # Margin Lifestyle Index (MLI) - Qualitative Sliders
 # =============================================================
 st.subheader("Margin Lifestyle Index (Qualitative)")
-st.caption("Rate how you currently feel in each area. Each slider is weighted 0–20; total score is out of 100.")
+st.markdown("The goal of **Coast FI** is to create more *margin* so you can invest energy into the rest of your life — relationships, purpose, health, and peace of mind.")
+
+st.caption("Each slider is 0–20. Total score is out of 100.")
+# Legend for ranges
+st.markdown('<div class="z-card"><span class="legend-badge">0–39: Needs Attention</span><span class="legend-badge">40–69: Developing</span><span class="legend-badge">70–100: Strong</span></div>', unsafe_allow_html=True)
 
 mli_cols = st.columns(2)
 with mli_cols[0]:
-    mli_emotional = st.slider("Emotional / Spiritual", 0, 20, 10)
-    mli_relationships = st.slider("Strength of Relationships", 0, 20, 10)
-    mli_physical = st.slider("Physical Health / Fitness", 0, 20, 10)
+    mli_emotional = st.slider("Emotional / Spiritual", 0, 20, 10, help="Sense of calm, meaning, resilience, and joy. Do you feel centered day-to-day?")
+    mli_relationships = st.slider("Strength of Relationships", 0, 20, 10, help="Connection with partner, family, friends, and community. Do you feel supported and present?")
+    mli_physical = st.slider("Physical Health / Fitness", 0, 20, 10, help="Sleep quality, energy, nutrition, and movement. Are your habits serving you?")
 with mli_cols[1]:
-    mli_purpose = st.slider("Current Work / Purpose", 0, 20, 10)
-    mli_finances = st.slider("Overall Feeling about Finances", 0, 20, 10)
+    mli_purpose = st.slider("Current Work / Purpose", 0, 20, 10, help="Does your work feel meaningful? Do you have autonomy and time for pursuits that matter?")
+    mli_finances = st.slider("Overall Feeling about Finances", 0, 20, 10, help="Stress level, clarity of plan, and confidence. Do you feel in control?")
 
 mli_scores = {
     "Emotional/Spiritual": mli_emotional,
@@ -273,49 +287,46 @@ fig2.savefig(tmp_img2.name, dpi=200)
 mli_chart_path = tmp_img2.name
 
 # =============================================================
-# PDF Download (includes both charts + disclaimer)
+# PDF Download (Unicode fonts embedded, includes both charts + disclaimer)
 # =============================================================
 st.subheader("Download Results")
-
-def _latin1(s: str) -> str:
-    try:
-        return s.encode("latin-1", "replace").decode("latin-1")
-    except Exception:
-        return s
 
 def build_pdf(path_to_chart: str, path_to_mli: str):
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
+    # Register fonts (bundled in ./fonts)
+    pdf.add_font("DejaVu", "", "fonts/DejaVuSans.ttf")
+    pdf.add_font("DejaVu", "B", "fonts/DejaVuSans-Bold.ttf")
+    pdf.set_font("DejaVu", "B", 16)
     pdf.add_page()
-    pdf.set_font("Arial", 'B', 16)
-    pdf.cell(0, 10, _latin1("Coast FI Calculator - Zizzi Investments"), ln=True)
-    pdf.set_font("Arial", '', 12)
-    pdf.cell(0, 8, _latin1(f"Mode: {mode}"), ln=True)
-    pdf.cell(0, 8, _latin1(f"Basis: {'Nominal' if basis.startswith('Nominal') else 'Real'}"), ln=True)
+    pdf.cell(0, 10, "Coast FI Calculator - Zizzi Investments", ln=True)
+    pdf.set_font("DejaVu", "", 12)
+    pdf.cell(0, 8, f"Mode: {mode}", ln=True)
+    pdf.cell(0, 8, f"Basis: {'Nominal' if basis.startswith('Nominal') else 'Real'}", ln=True)
     pdf.ln(2)
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 8, _latin1("Inputs"), ln=True)
-    pdf.set_font("Arial", '', 12)
-    pdf.cell(0, 7, _latin1(f"Current Spending: ${current_spending:,.0f}"), ln=True)
-    pdf.cell(0, 7, _latin1(f"Inflation Rate: {inflation_rate*100:.2f}%"), ln=True)
-    pdf.cell(0, 7, _latin1(f"Years Until 65: {years_until_65}"), ln=True)
-    pdf.cell(0, 7, _latin1(f"Current Portfolio: ${current_portfolio:,.0f}"), ln=True)
-    pdf.cell(0, 7, _latin1(f"Expected Return (nominal): {expected_return_nominal*100:.2f}%"), ln=True)
-    pdf.cell(0, 7, _latin1(f"Safe Withdrawal Rate: {swr*100:.2f}%"), ln=True)
+    pdf.set_font("DejaVu", "B", 12)
+    pdf.cell(0, 8, "Inputs", ln=True)
+    pdf.set_font("DejaVu", "", 12)
+    pdf.cell(0, 7, f"Current Spending: ${current_spending:,.0f}", ln=True)
+    pdf.cell(0, 7, f"Inflation Rate: {inflation_rate*100:.2f}%", ln=True)
+    pdf.cell(0, 7, f"Years Until 65: {years_until_65}", ln=True)
+    pdf.cell(0, 7, f"Current Portfolio: ${current_portfolio:,.0f}", ln=True)
+    pdf.cell(0, 7, f"Expected Return (nominal): {expected_return_nominal*100:.2f}%", ln=True)
+    pdf.cell(0, 7, f"Safe Withdrawal Rate: {swr*100:.2f}%", ln=True)
     if use_contrib and contrib_amount > 0:
-        pdf.cell(0, 7, _latin1(f"Contributions: ${contrib_amount:,.0f} {contrib_freq.lower()} ({contrib_timing.lower()})"), ln=True)
+        pdf.cell(0, 7, f"Contributions: ${contrib_amount:,.0f} {contrib_freq.lower()} ({contrib_timing.lower()})", ln=True)
 
     pdf.ln(2)
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 8, _latin1("Results"), ln=True)
-    pdf.set_font("Arial", '', 12)
+    pdf.set_font("DejaVu", "B", 12)
+    pdf.cell(0, 8, "Results", ln=True)
+    pdf.set_font("DejaVu", "", 12)
     if mode == "Required Return to Coast":
-        pdf.cell(0, 7, _latin1(f"Required Return to Coast: {required_return*100:.2f}%"), ln=True)
+        pdf.cell(0, 7, f"Required Return to Coast: {required_return*100:.2f}%", ln=True)
     elif mode == "Ending Balance with Expected Return":
-        pdf.cell(0, 7, _latin1(f"Ending Balance @ Expected Return: ${fv_at_expected:,.0f}"), ln=True)
+        pdf.cell(0, 7, f"Ending Balance @ Expected Return: ${fv_at_expected:,.0f}", ln=True)
     else:
-        pdf.cell(0, 7, _latin1(f"Years Needed @ Expected Return: {required_years:.1f}"), ln=True)
-    pdf.cell(0, 7, _latin1(f"Target at 65: ${target_balance_at_65:,.0f}"), ln=True)
+        pdf.cell(0, 7, f"Years Needed @ Expected Return: {required_years:.1f}", ln=True)
+    pdf.cell(0, 7, f"Target at 65: ${target_balance_at_65:,.0f}", ln=True)
 
     if path_to_chart and os.path.exists(path_to_chart):
         pdf.ln(4)
@@ -323,20 +334,21 @@ def build_pdf(path_to_chart: str, path_to_mli: str):
 
     # MLI section
     pdf.ln(6)
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 8, _latin1("Margin Lifestyle Index"), ln=True)
-    pdf.set_font("Arial", '', 12)
+    pdf.set_font("DejaVu", "B", 12)
+    pdf.cell(0, 8, "Margin Lifestyle Index", ln=True)
+    pdf.set_font("DejaVu", "", 12)
     for k, v in mli_scores.items():
-        pdf.cell(0, 7, _latin1(f"{k}: {v}/20"), ln=True)
-    pdf.cell(0, 7, _latin1(f"Total: {mli_total}/100 ({mli_label})"), ln=True)
+        pdf.cell(0, 7, f"{k}: {v}/20", ln=True)
+    pdf.cell(0, 7, f"Total: {mli_total}/100 ({mli_label})", ln=True)
+    pdf.cell(0, 7, "Ranges: 0–39 Needs Attention | 40–69 Developing | 70–100 Strong", ln=True)
 
     if path_to_mli and os.path.exists(path_to_mli):
         pdf.ln(4)
         pdf.image(path_to_mli, w=150)
 
     pdf.ln(6)
-    pdf.set_font("Arial", 'I', 10)
-    pdf.multi_cell(0, 6, _latin1("This calculator is provided for educational purposes only and should not be considered investment, legal, or tax advice. The calculations are based on user-provided assumptions, which may not reflect actual market conditions or your personal situation. Zizzi Investments, LLC makes no guarantee as to the accuracy or completeness of the results and assumes no liability for decisions made based on this information. Please consult a qualified professional before making financial decisions."))
+    pdf.set_font("DejaVu", "", 10)
+    pdf.multi_cell(0, 6, "This calculator is provided for educational purposes only and should not be considered investment, legal, or tax advice. The calculations are based on user-provided assumptions, which may not reflect actual market conditions or your personal situation. Zizzi Investments, LLC makes no guarantee as to the accuracy or completeness of the results and assumes no liability for decisions made based on this information. Please consult a qualified professional before making financial decisions.")
     return pdf
 
 if st.button("Download PDF Report"):
