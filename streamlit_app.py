@@ -15,13 +15,13 @@ BRAND_ACCENT  = "#E3B800"
 BRAND_BG      = "#FFFFFF"
 BRAND_CARD_BG = "#F7F5F2"
 
-# ---- Header ----
+# ---- Header & Fonts ----
 st.markdown(
     '<link href="https://fonts.googleapis.com/css2?family=Archivo+Expanded:wght@500;600&family=Source+Sans+3:wght@400;600&family=Source+Serif+4:wght@600&display=swap" rel="stylesheet">'
     '<style>'
-    'h1, h2, h3 { font-family: "Source Serif 4", serif; font-weight: 600; }'
-    '.subhead, label, .stButton button, .stRadio, .stSelectbox, .stSlider, .stNumberInput { font-family: "Archivo Expanded", sans-serif; }'
-    'body, .stApp, .stMarkdown, .stCaption, .stText, .stDataFrame, .z-card { font-family: "Source Sans 3", sans-serif; }'
+    'h1, h2, h3 {{ font-family: "Source Serif 4", serif; font-weight: 600; }}'
+    '.subhead, label, .stButton button, .stRadio, .stSelectbox, .stSlider, .stNumberInput {{ font-family: "Archivo Expanded", sans-serif; }}'
+    'body, .stApp, .stMarkdown, .stCaption, .stText, .stDataFrame, .z-card {{ font-family: "Source Sans 3", sans-serif; }}'
     '</style>',
     unsafe_allow_html=True
 )
@@ -45,15 +45,15 @@ with st.container():
 # Styles
 st.markdown(
     "<style>"
-    ".stApp { background-color: {BRAND_BG}; }"
-    ".z-card {"
+    ".stApp {{ background-color: {BRAND_BG}; }}"
+    ".z-card {{"
         " background: {BRAND_CARD_BG};"
         " padding: 1.25rem;"
         " border-radius: 1rem;"
         " border: 1px solid #eae6df;"
-    " }"
-    ".mli-score { font-size: 1.1rem; font-weight: 600; }"
-    ".legend-badge { display:inline-block; padding:4px 8px; border-radius:8px; margin-right:6px; border:1px solid #ddd; }"
+    " }}"
+    ".mli-score {{ font-size: 1.1rem; font-weight: 600; }}"
+    ".legend-badge {{ display:inline-block; padding:4px 8px; border-radius:8px; margin-right:6px; border:1px solid #ddd; }}"
     "</style>"
     .replace("{BRAND_BG}", BRAND_BG)
     .replace("{BRAND_CARD_BG}", BRAND_CARD_BG),
@@ -182,21 +182,21 @@ st.subheader("Results")
 st.markdown('<div class="z-card">', unsafe_allow_html=True)
 
 if mode == "Required Return to Coast":
-    st.write(f"Required Return to Coast: {required_return*100:.2f}% annualized")
-    st.write(f"Future Value at Expected Return: ${fv_at_expected:,.0f}")
-    st.write(f"Target at 65: ${target_balance_at_65:,.0f}")
+    st.write(f"Required Return to Coast: {{required_return*100:.2f}}% annualized")
+    st.write(f"Future Value at Expected Return: ${{fv_at_expected:,.0f}}")
+    st.write(f"Target at 65: ${{target_balance_at_65:,.0f}}")
 
 elif mode == "Ending Balance with Expected Return":
-    st.write(f"Ending Balance at Expected Return: ${fv_at_expected:,.0f}")
-    st.write(f"Target at 65: ${target_balance_at_65:,.0f}")
+    st.write(f"Ending Balance at Expected Return: ${{fv_at_expected:,.0f}}")
+    st.write(f"Target at 65: ${{target_balance_at_65:,.0f}}")
     if fv_gap <= 0:
         st.success("On track or ahead.")
     else:
-        st.warning(f"Short by ${fv_gap:,.0f}")
+        st.warning(f"Short by ${{fv_gap:,.0f}}")
 
 elif mode == "Years Needed at Expected Return":
-    st.write(f"Years Needed: {required_years:.1f}")
-    st.write(f"Target at 65: ${target_balance_at_65:,.0f}")
+    st.write(f"Years Needed: {{required_years:.1f}}")
+    st.write(f"Target at 65: ${{target_balance_at_65:,.0f}}")
 
 st.markdown("</div>", unsafe_allow_html=True)
 
@@ -244,13 +244,13 @@ with mli_cols[1]:
     mli_purpose = st.slider("Current Work / Purpose", 0, 20, 10, help="Does your work feel meaningful? Do you have autonomy and time for pursuits that matter?")
     mli_finances = st.slider("Overall Feeling about Finances", 0, 20, 10, help="Stress level, clarity of plan, and confidence. Do you feel in control?")
 
-mli_scores = {
+mli_scores = {{
     "Emotional/Spiritual": mli_emotional,
     "Relationships": mli_relationships,
     "Physical": mli_physical,
     "Work/Purpose": mli_purpose,
     "Finances": mli_finances,
-}
+}}
 mli_total = sum(mli_scores.values())
 
 # Qualitative interpretation
@@ -261,7 +261,7 @@ elif mli_total < 70:
 else:
     mli_label = "Strong"
 
-st.markdown(f'<div class="z-card"><span class="mli-score">Your Margin Lifestyle Index: {mli_total} / 100 — {mli_label}</span></div>', unsafe_allow_html=True)
+st.markdown(f'<div class="z-card"><span class="mli-score">Your Margin Lifestyle Index: {{mli_total}} / 100 — {{mli_label}}</span></div>', unsafe_allow_html=True)
 
 # Radar chart for MLI
 mli_chart_path = None
@@ -287,46 +287,57 @@ fig2.savefig(tmp_img2.name, dpi=200)
 mli_chart_path = tmp_img2.name
 
 # =============================================================
-# PDF Download (Unicode fonts embedded, includes both charts + disclaimer)
+# PDF Download (Unicode fonts embedded with fpdf2, includes both charts + disclaimer)
 # =============================================================
 st.subheader("Download Results")
 
 def build_pdf(path_to_chart: str, path_to_mli: str):
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
-    # Register fonts (bundled in ./fonts)
-    pdf.add_font("DejaVu", "", "fonts/DejaVuSans.ttf")
-    pdf.add_font("DejaVu", "B", "fonts/DejaVuSans-Bold.ttf")
-    pdf.set_font("DejaVu", "B", 16)
+    # Register DejaVu fonts (bundled in ./fonts); fall back to core if not found
+    try:
+        pdf.add_font("DejaVu", "", "fonts/DejaVuSans.ttf", uni=True)
+        pdf.add_font("DejaVu", "B", "fonts/DejaVuSans-Bold.ttf", uni=True)
+        fam_regular = ("DejaVu", "", 12)
+        fam_bold = ("DejaVu", "B", 12)
+        fam_title = ("DejaVu", "B", 16)
+        fam_small = ("DejaVu", "", 10)
+    except Exception:
+        fam_regular = ("Arial", "", 12)
+        fam_bold = ("Arial", "B", 12)
+        fam_title = ("Arial", "B", 16)
+        fam_small = ("Arial", "", 10)
+
     pdf.add_page()
+    pdf.set_font(*fam_title)
     pdf.cell(0, 10, "Coast FI Calculator - Zizzi Investments", ln=True)
-    pdf.set_font("DejaVu", "", 12)
-    pdf.cell(0, 8, f"Mode: {mode}", ln=True)
-    pdf.cell(0, 8, f"Basis: {'Nominal' if basis.startswith('Nominal') else 'Real'}", ln=True)
+    pdf.set_font(*fam_regular)
+    pdf.cell(0, 8, f"Mode: {{mode}}", ln=True)
+    pdf.cell(0, 8, f"Basis: {{'Nominal' if basis.startswith('Nominal') else 'Real'}}", ln=True)
     pdf.ln(2)
-    pdf.set_font("DejaVu", "B", 12)
+    pdf.set_font(*fam_bold)
     pdf.cell(0, 8, "Inputs", ln=True)
-    pdf.set_font("DejaVu", "", 12)
-    pdf.cell(0, 7, f"Current Spending: ${current_spending:,.0f}", ln=True)
-    pdf.cell(0, 7, f"Inflation Rate: {inflation_rate*100:.2f}%", ln=True)
-    pdf.cell(0, 7, f"Years Until 65: {years_until_65}", ln=True)
-    pdf.cell(0, 7, f"Current Portfolio: ${current_portfolio:,.0f}", ln=True)
-    pdf.cell(0, 7, f"Expected Return (nominal): {expected_return_nominal*100:.2f}%", ln=True)
-    pdf.cell(0, 7, f"Safe Withdrawal Rate: {swr*100:.2f}%", ln=True)
+    pdf.set_font(*fam_regular)
+    pdf.cell(0, 7, f"Current Spending: ${{current_spending:,.0f}}", ln=True)
+    pdf.cell(0, 7, f"Inflation Rate: {{inflation_rate*100:.2f}}%", ln=True)
+    pdf.cell(0, 7, f"Years Until 65: {{years_until_65}}", ln=True)
+    pdf.cell(0, 7, f"Current Portfolio: ${{current_portfolio:,.0f}}", ln=True)
+    pdf.cell(0, 7, f"Expected Return (nominal): {{expected_return_nominal*100:.2f}}%", ln=True)
+    pdf.cell(0, 7, f"Safe Withdrawal Rate: {{swr*100:.2f}}%", ln=True)
     if use_contrib and contrib_amount > 0:
-        pdf.cell(0, 7, f"Contributions: ${contrib_amount:,.0f} {contrib_freq.lower()} ({contrib_timing.lower()})", ln=True)
+        pdf.cell(0, 7, f"Contributions: ${{contrib_amount:,.0f}} {{contrib_freq.lower()}} ({{contrib_timing.lower()}})", ln=True)
 
     pdf.ln(2)
-    pdf.set_font("DejaVu", "B", 12)
+    pdf.set_font(*fam_bold)
     pdf.cell(0, 8, "Results", ln=True)
-    pdf.set_font("DejaVu", "", 12)
+    pdf.set_font(*fam_regular)
     if mode == "Required Return to Coast":
-        pdf.cell(0, 7, f"Required Return to Coast: {required_return*100:.2f}%", ln=True)
+        pdf.cell(0, 7, f"Required Return to Coast: {{required_return*100:.2f}}%", ln=True)
     elif mode == "Ending Balance with Expected Return":
-        pdf.cell(0, 7, f"Ending Balance @ Expected Return: ${fv_at_expected:,.0f}", ln=True)
+        pdf.cell(0, 7, f"Ending Balance @ Expected Return: ${{fv_at_expected:,.0f}}", ln=True)
     else:
-        pdf.cell(0, 7, f"Years Needed @ Expected Return: {required_years:.1f}", ln=True)
-    pdf.cell(0, 7, f"Target at 65: ${target_balance_at_65:,.0f}", ln=True)
+        pdf.cell(0, 7, f"Years Needed @ Expected Return: {{required_years:.1f}}", ln=True)
+    pdf.cell(0, 7, f"Target at 65: ${{target_balance_at_65:,.0f}}", ln=True)
 
     if path_to_chart and os.path.exists(path_to_chart):
         pdf.ln(4)
@@ -334,12 +345,12 @@ def build_pdf(path_to_chart: str, path_to_mli: str):
 
     # MLI section
     pdf.ln(6)
-    pdf.set_font("DejaVu", "B", 12)
+    pdf.set_font(*fam_bold)
     pdf.cell(0, 8, "Margin Lifestyle Index", ln=True)
-    pdf.set_font("DejaVu", "", 12)
+    pdf.set_font(*fam_regular)
     for k, v in mli_scores.items():
-        pdf.cell(0, 7, f"{k}: {v}/20", ln=True)
-    pdf.cell(0, 7, f"Total: {mli_total}/100 ({mli_label})", ln=True)
+        pdf.cell(0, 7, f"{{k}}: {{v}}/20", ln=True)
+    pdf.cell(0, 7, f"Total: {{mli_total}}/100 ({{mli_label}})", ln=True)
     pdf.cell(0, 7, "Ranges: 0–39 Needs Attention | 40–69 Developing | 70–100 Strong", ln=True)
 
     if path_to_mli and os.path.exists(path_to_mli):
@@ -347,7 +358,7 @@ def build_pdf(path_to_chart: str, path_to_mli: str):
         pdf.image(path_to_mli, w=150)
 
     pdf.ln(6)
-    pdf.set_font("DejaVu", "", 10)
+    pdf.set_font(*fam_small)
     pdf.multi_cell(0, 6, "This calculator is provided for educational purposes only and should not be considered investment, legal, or tax advice. The calculations are based on user-provided assumptions, which may not reflect actual market conditions or your personal situation. Zizzi Investments, LLC makes no guarantee as to the accuracy or completeness of the results and assumes no liability for decisions made based on this information. Please consult a qualified professional before making financial decisions.")
     return pdf
 
