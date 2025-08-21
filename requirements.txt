@@ -1,5 +1,5 @@
 
 streamlit
 matplotlib
-fpdf
+fpdf2>=2.7.0
 numpy
